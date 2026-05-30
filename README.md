@@ -1,3 +1,4 @@
+````markdown
 # Sentiment Analysis of Trump Tweets with SHAP
 
 Projekt dotyczy analizy sentymentu tweetów z wykorzystaniem metod NLP oraz interpretacji działania modelu za pomocą metody SHAP.
@@ -14,15 +15,26 @@ Użyty plik źródłowy:
 
 ```text
 realdonaldtrump.csv
-```
+````
 
 Zbiór zawiera tweety opublikowane przez konto `@realDonaldTrump`. W projekcie wykorzystano przede wszystkim kolumnę zawierającą treść tweeta, czyli `content`.
 
-Ze względu na to, że dane źródłowe można pobrać bezpośrednio z Kaggle, w repozytorium nie musi znajdować się surowy plik `realdonaldtrump.csv`. W repozytorium umieszczony zostanie natomiast przetworzony plik danych po etapie preprocessingu:
+Ze względu na to, że dane źródłowe można pobrać bezpośrednio z Kaggle, w repozytorium nie musi znajdować się surowy plik `realdonaldtrump.csv`. W repozytorium umieszczony jest natomiast przetworzony plik danych po etapie preprocessingu:
 
 ```text
 data/trump_tweets_preprocessed.csv
 ```
+
+## Zakres projektu
+
+Projekt obejmuje:
+
+* przygotowanie i oczyszczenie danych tekstowych,
+* automatyczne etykietowanie sentymentu metodą VADER,
+* eksploracyjną analizę danych,
+* budowę modelu klasyfikacji sentymentu,
+* ocenę jakości modelu,
+* analizę SHAP oraz interpretację wyników.
 
 ## Struktura projektu
 
@@ -30,7 +42,8 @@ data/trump_tweets_preprocessed.csv
 sentiment-shap-trump-tweets/
 ├── data/
 │   ├── README.md
-│   └── trump_tweets_preprocessed.csv
+│   ├── trump_tweets_preprocessed.csv
+│   └── sentiment_examples.csv
 │
 ├── notebooks/
 │   ├── 01_preprocessing_eda_sentiment_labels.ipynb
@@ -41,6 +54,7 @@ sentiment-shap-trump-tweets/
 │   ├── sentiment_distribution.png
 │   ├── tweet_length_distribution.png
 │   ├── most_common_words.png
+│   ├── wordcloud.png
 │   ├── confusion_matrix.png
 │   ├── shap_positive_bar.png
 │   └── shap_negative_bar.png
@@ -53,29 +67,21 @@ sentiment-shap-trump-tweets/
 └── .gitignore
 ```
 
-## Etap 1: przygotowanie danych
+## Przygotowanie danych
 
-W pierwszym etapie wykonano przygotowanie danych tekstowych do dalszej analizy. Obejmowało ono:
+W pierwszym etapie wczytano plik `realdonaldtrump.csv`, sprawdzono strukturę danych oraz wykonano preprocessing tekstu.
 
-* wczytanie danych z pliku `realdonaldtrump.csv`,
-* wybór kolumny zawierającej treść tweetów,
-* usunięcie braków danych,
-* usunięcie duplikatów,
-* oczyszczenie tekstu tweetów,
-* obliczenie długości tweetów,
-* automatyczne przypisanie etykiet sentymentu,
-* wykonanie eksploracyjnej analizy danych.
+W ramach przygotowania danych:
 
-Czyszczenie tekstu obejmowało między innymi:
+* usunięto duplikaty w kolumnie `content`,
+* przygotowano kolumnę `vader_text` do etykietowania metodą VADER,
+* przygotowano kolumnę `clean_text` do dalszego modelowania,
+* usunięto rekordy, dla których po czyszczeniu tekst był pusty,
+* wyznaczono długość tekstu i liczbę słów,
+* obliczono wynik sentymentu `vader_score`,
+* przypisano etykietę `sentiment`.
 
-* zamianę tekstu na małe litery,
-* usunięcie linków,
-* usunięcie oznaczeń użytkowników,
-* usunięcie symboli hashtagów,
-* usunięcie znaków specjalnych,
-* usunięcie nadmiarowych spacji.
-
-Ponieważ zbiór danych nie zawierał ręcznie przygotowanych etykiet sentymentu, zastosowano metodę VADER. Dla każdego tweeta obliczono wartość `compound score`, a następnie przypisano jedną z trzech klas:
+Do etykietowania wykorzystano metodę VADER. Dla każdego tweeta obliczono wartość `compound`, a następnie przypisano jedną z trzech klas:
 
 ```text
 compound >= 0.05  -> positive
@@ -83,56 +89,65 @@ compound <= -0.05 -> negative
 pozostałe         -> neutral
 ```
 
-Wynikiem tego etapu jest plik:
+Po preprocessingu uzyskano plik:
 
 ```text
 data/trump_tweets_preprocessed.csv
 ```
 
-Plik zawiera między innymi kolumny:
+Plik zawiera 42 998 rekordów oraz 14 kolumn.
 
+## Kolumny w przygotowanym zbiorze
+
+Plik `trump_tweets_preprocessed.csv` zawiera następujące kolumny:
+
+* `id` — identyfikator tweeta,
+* `date` — data publikacji tweeta,
 * `content` — oryginalna treść tweeta,
-* `clean_text` — oczyszczona treść tweeta,
+* `vader_text` — lekko oczyszczony tekst użyty do etykietowania metodą VADER,
+* `clean_text` — oczyszczony tekst przeznaczony do dalszego modelowania,
 * `original_length` — długość oryginalnego tekstu,
 * `clean_length` — długość tekstu po czyszczeniu,
 * `word_count` — liczba słów po czyszczeniu,
-* `vader_score` — wynik sentymentu VADER,
-* `sentiment` — etykieta sentymentu: `positive`, `neutral` albo `negative`.
+* `retweets` — liczba retweetów,
+* `favorites` — liczba polubień,
+* `mentions` — wzmianki o użytkownikach,
+* `hashtags` — hashtagi,
+* `vader_score` — wynik `compound` z metody VADER,
+* `sentiment` — przypisana etykieta sentymentu.
 
-## Etap 2: model klasyfikacji sentymentu
+## Wyniki preprocessingu
 
-W drugim etapie przygotowany tekst zostanie przekształcony do postaci numerycznej z wykorzystaniem metody TF-IDF. Następnie zostanie zbudowany model klasyfikacji sentymentu.
+Po wykonaniu preprocessingu uzyskano następujące liczby:
 
-Planowane podejście:
+| Etap                                       | Liczba rekordów |
+| ------------------------------------------ | --------------: |
+| Dane początkowe                            |          43 352 |
+| Po usunięciu duplikatów                    |          43 091 |
+| Po usunięciu pustych wartości `clean_text` |          42 998 |
 
-* podział danych na zbiór treningowy i testowy,
-* reprezentacja tekstu metodą TF-IDF,
-* trenowanie modelu klasyfikacyjnego,
-* ocena jakości modelu z wykorzystaniem metryk klasyfikacyjnych.
+Rozkład klas sentymentu po etykietowaniu metodą VADER:
 
-Do oceny modelu zostaną wykorzystane między innymi:
+| Klasa    | Liczba tweetów | Udział |
+| -------- | -------------: | -----: |
+| positive |         25 038 | 58.23% |
+| negative |         10 660 | 24.79% |
+| neutral  |          7 300 | 16.98% |
 
-* accuracy,
-* precision,
-* recall,
-* F1-score,
-* macierz pomyłek.
+## Wizualizacje
 
-Jako główny model planowane jest użycie `Logistic Regression`, ponieważ jest to model dobrze współpracujący z reprezentacją TF-IDF oraz łatwy do interpretacji przy pomocy SHAP.
+W katalogu `figures/` znajdują się wizualizacje przygotowane w ramach eksploracyjnej analizy danych:
 
-## Etap 3: analiza SHAP
+* `sentiment_distribution.png` — rozkład klas sentymentu,
+* `tweet_length_distribution.png` — rozkład długości tweetów po czyszczeniu,
+* `most_common_words.png` — najczęściej występujące słowa,
+* `wordcloud.png` — chmura słów.
 
-W trzecim etapie zostanie przeprowadzona analiza SHAP dla wytrenowanego modelu. Celem tej analizy będzie sprawdzenie, które słowa i frazy miały największy wpływ na klasyfikację sentymentu.
+## Ograniczenia etykietowania
 
-Analiza obejmie:
+Etykiety sentymentu zostały wygenerowane automatycznie metodą VADER, dlatego należy traktować je jako etykiety przybliżone. Metoda ta może popełniać błędy w przypadku nazw własnych, ironii, wieloznacznych słów oraz kontekstu politycznego lub kulturowego.
 
-* globalną interpretację modelu,
-* wskazanie najważniejszych cech dla klasy pozytywnej,
-* wskazanie najważniejszych cech dla klasy negatywnej,
-* lokalną interpretację wybranych tweetów,
-* analizę przykładów poprawnie i błędnie sklasyfikowanych.
-
-Wizualizacje SHAP pozwolą pokazać, czy model podejmuje decyzje na podstawie słów rzeczywiście związanych z emocjonalnym nacechowaniem tekstu, czy raczej opiera się na często występujących słowach specyficznych dla badanego zbioru danych.
+Przykładowo wyrażenia takie jak `Miss Universe` lub `Miss USA` mogą zostać błędnie potraktowane jako negatywne, ponieważ słowo `miss` w słowniku VADER ma ujemne nacechowanie. W analizowanych danych słowo to występuje jednak jako część nazwy własnej.
 
 ## Uruchomienie projektu
 
@@ -149,41 +164,43 @@ cd sentiment-shap-trump-tweets
 pip install -r requirements.txt
 ```
 
-### 3. Przygotowanie danych
+### 3. Pobranie danych źródłowych
 
 Należy pobrać zbiór danych z Kaggle:
 
 https://www.kaggle.com/datasets/austinreese/trump-tweets
 
-Następnie należy pobrać i wykorzystać plik:
+Następnie należy wykorzystać plik:
 
 ```text
 realdonaldtrump.csv
 ```
 
-Plik można wczytać w notebooku:
+### 4. Przygotowanie danych
+
+Kod odpowiedzialny za przygotowanie danych znajduje się w notebooku:
 
 ```text
 notebooks/01_preprocessing_eda_sentiment_labels.ipynb
 ```
 
-Po uruchomieniu notebooka zostanie wygenerowany plik:
+Po uruchomieniu notebooka tworzony jest plik:
 
 ```text
 data/trump_tweets_preprocessed.csv
 ```
 
-### 4. Trenowanie modelu
+### 5. Budowa modelu
 
-Model klasyfikacyjny znajduje się w notebooku:
+Kod odpowiedzialny za budowę modelu klasyfikacyjnego znajduje się w notebooku:
 
 ```text
 notebooks/02_model_sentiment_classification.ipynb
 ```
 
-### 5. Analiza SHAP
+### 6. Analiza SHAP
 
-Analiza wyjaśnialności modelu znajduje się w notebooku:
+Kod odpowiedzialny za analizę SHAP znajduje się w notebooku:
 
 ```text
 notebooks/03_shap_analysis.ipynb
@@ -196,27 +213,14 @@ W projekcie wykorzystano między innymi:
 * `pandas`,
 * `numpy`,
 * `matplotlib`,
-* `scikit-learn`,
 * `vaderSentiment`,
 * `wordcloud`,
+* `scikit-learn`,
 * `shap`.
-
-## Autorzy i podział pracy
-
-Projekt został wykonany przez zespół trzyosobowy.
-
-| Osoba   | Zakres prac                                                                                              |
-| ------- | -------------------------------------------------------------------------------------------------------- |
-| Osoba 1 | Przygotowanie danych, preprocessing, etykietowanie sentymentu metodą VADER, eksploracyjna analiza danych |
-| Osoba 2 | Budowa modelu klasyfikacji sentymentu, reprezentacja tekstu metodą TF-IDF, ocena jakości modelu          |
-| Osoba 3 | Analiza SHAP, interpretacja wyników, przygotowanie wizualizacji i końcowych wniosków                     |
 
 ## Status projektu
 
 Projekt w trakcie realizacji.
 
-Aktualnie realizowany etap:
-
-```text
-Etap 1: przygotowanie danych, preprocessing i analiza wstępna
+```
 ```
