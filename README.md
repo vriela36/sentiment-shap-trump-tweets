@@ -1,4 +1,3 @@
-````markdown
 # Sentiment Analysis of Trump Tweets with SHAP
 
 Projekt dotyczy analizy sentymentu tweetów z wykorzystaniem metod NLP oraz interpretacji działania modelu za pomocą metody SHAP.
@@ -15,7 +14,7 @@ Użyty plik źródłowy:
 
 ```text
 realdonaldtrump.csv
-````
+```
 
 Zbiór zawiera tweety opublikowane przez konto `@realDonaldTrump`. W projekcie wykorzystano przede wszystkim kolumnę zawierającą treść tweeta, czyli `content`.
 
@@ -41,9 +40,9 @@ Projekt obejmuje:
 ```text
 sentiment-shap-trump-tweets/
 ├── data/
-│   ├── README.md
 │   ├── trump_tweets_preprocessed.csv
-│   └── sentiment_examples.csv
+│   ├── sentiment_examples.csv
+│   └── shap_top_features.csv
 │
 ├── notebooks/
 │   ├── 01_preprocessing_eda_sentiment_labels.ipynb
@@ -57,11 +56,11 @@ sentiment-shap-trump-tweets/
 │   ├── wordcloud.png
 │   ├── confusion_matrix.png
 │   ├── shap_positive_bar.png
+│   ├── shap_neutral_bar.png
 │   └── shap_negative_bar.png
 │
-├── report/
-│   └── report.pdf
-│
+├── main.tex
+├── main.pdf
 ├── requirements.txt
 ├── README.md
 └── .gitignore
@@ -141,7 +140,17 @@ W katalogu `figures/` znajdują się wizualizacje przygotowane w ramach eksplora
 * `sentiment_distribution.png` — rozkład klas sentymentu,
 * `tweet_length_distribution.png` — rozkład długości tweetów po czyszczeniu,
 * `most_common_words.png` — najczęściej występujące słowa,
-* `wordcloud.png` — chmura słów.
+* `wordcloud.png` — chmura słów,
+* `confusion_matrix.png` — macierz pomyłek modelu,
+* `shap_positive_bar.png` — najważniejsze cechy SHAP dla klasy pozytywnej,
+* `shap_neutral_bar.png` — najważniejsze cechy SHAP dla klasy neutralnej,
+* `shap_negative_bar.png` — najważniejsze cechy SHAP dla klasy negatywnej.
+
+## Podział pracy
+
+* Gabriela Froń — przygotowanie zbioru danych, oczyszczenie tweetów, etykiety sentymentu VADER oraz eksploracyjna analiza danych.
+* Adam Balski — reprezentacja TF-IDF, model klasyfikacyjny oraz ocena jakości predykcji.
+* Natalia Przychodzień — analiza SHAP, wizualizacje interpretacyjne, omówienie wyników oraz końcowe sprawozdanie.
 
 ## Ograniczenia etykietowania
 
@@ -220,7 +229,4 @@ W projekcie wykorzystano między innymi:
 
 ## Status projektu
 
-Projekt w trakcie realizacji.
-
-```
-```
+Projekt zawiera preprocessing, model klasyfikacyjny, ocenę jakości, analizę SHAP w notebookach Jupyter.
