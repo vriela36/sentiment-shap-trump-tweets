@@ -1,4 +1,5 @@
 # Sentiment Analysis of Trump Tweets with SHAP
+Gabriela Froń, Adam Balski, Natalia Przychodzień
 
 Projekt dotyczy analizy sentymentu tweetów z wykorzystaniem metod NLP oraz interpretacji działania modelu za pomocą metody SHAP.
 
